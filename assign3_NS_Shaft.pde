@@ -107,6 +107,7 @@ void runGame(){
 
   displayHealthAndTimer(); // Display the player's health and survival time
 
+
   if (player.health <= 0) { // check if gameover (player is dead)
     gameState = GAME_OVER;  // Set the game state to game over
   }
@@ -131,9 +132,11 @@ void scrollBackground() {
 
 // Display Functions
 void displayHealthAndTimer() {
-  // Stage 3-1: Display the player's health and survival time
-  
-  // End of stage 3-1
+  fill(0);
+  textSize(16);
+  textAlign(LEFT, TOP);
+  text("Health: " + player.health, 10, 20); // Display health
+  text("Time: " + survivalTime + " s", 10, 40); // Display survival time
 }
 
 // Handles the win condition
