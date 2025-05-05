@@ -1,18 +1,20 @@
-// Platform Class: Represents a platform in the game
 class Platform {
   float x, y, w = 80, h = 20; // Position and size of the platform
-  float speed = 2; // moving speed of the platform
-
-
+  
   Platform(float _x, float _y) {
     x = _x; // Set the initial x position
     y = _y; // Set the initial y position
   }
 
   void update() {
-    // Stage 1-2: Move the platform up and reset its position when it goes out of view
-  
-    // End of stage 1-2
+    // Stage 1-2: Move the platform upward with the scrolling background
+    y -= SCROLL_SPEED; // Move the platform upwards with the background scroll speed
+
+    // If the platform goes off the screen (above the top), reset it to the bottom
+    if (y < -h) {
+      y = height; // Reset platform to the bottom of the screen
+      x = random(0, width - w); // Set a new random horizontal position
+    }
   }
 
   void display() {

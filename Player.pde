@@ -1,13 +1,18 @@
-// Player Class: Represents the player in the game
+// AABB function to check for collision between two AABBs
+boolean AABB(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh) {
+  return (ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by);
+}
+
 class Player {
   float x, y, w = 30, h = 60, xSpeed = 5, ySpeed = 0, gravity = 0.4; // Position, size, speed, and physics
   int health = PLAYER_HEALTH; // Player's health
   int moveDir = 0; // Movement direction, 0=idle, 1=right, -1=left
   int spriteIndex = 0; // sprite index: 0=idle, 1=left, 2=right
   int animatedFrameIndex = 0; // animated frame index for the sprite
-  boolean invincible = true, damaged = false; // Flags for invincibility and damage states
+  boolean invincible = false, damaged = false; // Flags for invincibility and damage states
   int invincibilityTimer = INVINCIBILITY_DURATION, damageTimer = 0; // Timers for invincibility and damage
   float feetOffset = 5; // Offset for feet collision detection
+  int timeOnPlatform = 0; // Track the time player spends on a platform
 
   Player() {
     x = width / 2; // Start the player in the middle of the screen
@@ -16,12 +21,14 @@ class Player {
 
   void update() {
     if (health <= 0) return; // Stop updating if the player is dead
-    
+
+    // Handle horizontal movement
     if (moveDir != 0) {
       x += moveDir * xSpeed; // Move the player horizontally
       x = constrain(x, 0, width - w); // Keep the player within the screen bounds
     }
-    ySpeed += gravity; // Apply gravity to the player's ySpeed
+
+    ySpeed += gravity; // Apply gravity to the player's vertical speed
     y += ySpeed; // Update the player's vertical position
 
     handlePlatformCollision(); // Check for collisions with platforms
@@ -30,73 +37,76 @@ class Player {
     updateAnimation(); // Update the player's animation
   }
 
-  // Stage 2-2: Check for collisions with platforms
   void handlePlatformCollision() {
-   
+    boolean onPlatform = false; // Track if the player is standing on a platform
 
+    for (Platform platform : platforms) {
+      // Check if the player is falling and intersects with the platform
+      if (AABB(x, y + h, w, 1, platform.x, platform.y, platform.w, platform.h) && ySpeed >= 0) {
+        ySpeed = 0; // Stop falling
+        y = platform.y - h; // Position the player above the platform
+        timeOnPlatform++; // Increase the time the player spends on the platform
+        onPlatform = true; // Player is standing on a platform
+        break; // Exit the loop once the player has collided with a platform
+      }
+    }
+
+    // If the player is on a platform for too long and the platform reaches the top
+    if (onPlatform && y < 0) {
+      if (!damaged) {
+        health--; // Reduce health if player hits the top
+        damaged = true; // Enable damaged state for blinking
+        damageTimer = DAMAGE_BLINK_DURATION; // Set damage timer
+      }
+      timeOnPlatform = 0; // Reset platform time
+    }
   }
-  // End of stage 2-2
 
-  boolean AABB(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh) {
-    // Axis-Aligned Bounding Box (AABB) collision detection
-    return (ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by);
-  }
-
-  // Stage 2-3: handle ceiling and bottom collisions
   void handleCeilingBottomCollision() {
-    // When the player collides with the ceiling or bottom of the screen:
-    // keep the player at the top and subtract health by 1
-   
+    // Handle collision with the bottom of the screen
+    if (y + h > height) {
+      y = height - h; // Position the player at the bottom of the screen
+      ySpeed = 0; // Stop downward movement
+      resetPosition(); // Reset player to top of screen after falling
+    }
 
-    // Stage 3-2: 
-    // This block checks if the player is not invincible and not already in a damaged state:
-    // - If both conditions are true, the player's health is reduced by 1.
-    // - The player is then marked as damaged, and the damage timer is set to the predefined
-    //   DAMAGE_BLINK_DURATION. This ensures the player enters a temporary "damaged" state
-    //   with visual feedback (e.g., blinking effect) and avoids taking consecutive damage
-    //   immediately.
-    
-    // End of stage 3-2
+    // Handle collision with the top of the screen (ceiling)
+    if (y < 0) {
+      y = 0; // Position the player at the top of the screen
+      ySpeed = 0; // Stop upward movement
+    }
   }
-  // End of stage 2-3
 
-  // Stage 3-1: handle invincibility and damage states
   void handleInvincibleAndDamage() {
-    // This block handles the player's invincibility and damage states:
-    // - If the player is invincible, the invincibility timer decreases each frame.
-    //   Once the timer reaches 0, the player is no longer invincible.
-    // - If the player is in a damaged state, the damage timer decreases each frame.
-    //   Once the timer reaches 0, the damaged state is cleared.
-    // These timers ensure that the player has temporary protection after taking damage
-    // and provides visual feedback (e.g., blinking effect) during these states.
-
+    if (damaged) {
+      damageTimer--; // Decrease damage timer
+      if (damageTimer <= 0) {
+        damaged = false; // Turn off damaged state when timer runs out
+      }
+    }
   }
-  // End of stage 3-1
 
-  // Stage 3-3: Cycle through animation frames based on timer
   void updateAnimation() {
-    
-    
+    if (moveDir != 0) {
+      animatedFrameIndex = (frameCount / ANIMATION_INTERVAL) % playerSprites[spriteIndex].length; // Cycle through frames
+    } else {
+      animatedFrameIndex = 0; // If idle, show the first frame
+    }
   }
-  // End of stage 3-3
 
   void display() {
     PImage currentImage = playerSprites[spriteIndex][animatedFrameIndex];
-    if (invincible && frameCount % 20 < 10) {
-      tint(255, 126);
-    } else if (damaged && frameCount % 10 < 5) {
-      tint(255, 0, 0);
+    if (damaged && frameCount % 10 < 5) {
+      tint(255, 0, 0); // Blink red when damaged
     } else {
-      noTint();
+      noTint(); // Remove any tint when not damaged
     }
     image(currentImage, x, y, w, h);
-    noTint();
+    noTint(); // Make sure to reset tint
   }
 
   void setMovement(int dir) {
-    // Set the movement direction
     moveDir = dir;
-    // Update the sprite index based on direction
     spriteIndex = (moveDir < 0) ? 1 : (moveDir > 0) ? 2 : 0;
   }
 
@@ -108,4 +118,10 @@ class Player {
     }
   }
 
+  // Reset player to the top of the screen after falling
+  void resetPosition() {
+    y = 0;
+    x = width / 2; // Reset to center horizontally
+    timeOnPlatform = 0; // Reset platform time
+  }
 }

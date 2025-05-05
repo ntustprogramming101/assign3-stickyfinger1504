@@ -1,9 +1,9 @@
 // Constants
 final int NUM_PLATFORMS = 10; // Number of platforms
 final int PLAYER_HEALTH = 3; // Player's health
-final float SCROLL_SPEED = -2; // Speed of the background scrolling
-final int INVINCIBILITY_DURATION = 180; // invisible for 3 seconds at 60 FPS
-final int DAMAGE_BLINK_DURATION = 30; // blink for 0.5 seconds at 60 FPS
+final float SCROLL_SPEED = 2; // Speed of the platform and background scrolling
+final int INVINCIBILITY_DURATION = 180; // Invisible for 3 seconds at 60 FPS
+final int DAMAGE_BLINK_DURATION = 30; // Blink for 0.5 seconds at 60 FPS
 final int ANIMATION_INTERVAL = 10; // Frames per animation
 final int FRAME_RATE = 60; // Target frame rate
 final int WIN_MINIMUM_TIME = 60; // Time in seconds required to win
@@ -67,9 +67,9 @@ void initializeGame() {
 
 void initializePlatforms() {
   // stage 1-1: generate 10 platforms with random positions on the screen
-  for (int i = 0; i < NUM_PLATFORMS; i++) {
+for (int i = 0; i < NUM_PLATFORMS; i++) {
     // you need to change this line to create a new platform object with random horizontal positions, while distributed evenly in vertical space
-    platforms[i] = new Platform(0,0); 
+    platforms[i] = new Platform(random(80, width - 80), (i + 7) * (height / 10));
   }
   // End of stage 1-1
 }
@@ -91,9 +91,9 @@ void draw() {
   }
 }
 
-void runGame(){
+void runGame() {
   for (Platform platform : platforms) {
-    platform.update(); // Update the platform's position
+    platform.update(); // Update the platform's position (moving up with background)
     platform.display(); // Display the platform on the screen
   }
 
@@ -107,8 +107,7 @@ void runGame(){
 
   displayHealthAndTimer(); // Display the player's health and survival time
 
-
-  if (player.health <= 0) { // check if gameover (player is dead)
+  if (player.health <= 0) { // Check if the player is dead
     gameState = GAME_OVER;  // Set the game state to game over
   }
 
@@ -122,8 +121,8 @@ void scrollBackground() {
   image(bg, 0, bgY1); // Draw the first background image
   image(bg, 0, bgY2); // Draw the second background image
 
-  bgY1 += SCROLL_SPEED; // Move the first background image up
-  bgY2 += SCROLL_SPEED; // Move the second background image up
+  bgY1 -= SCROLL_SPEED; // Move the first background image up
+  bgY2 -= SCROLL_SPEED; // Move the second background image up
 
   // Reset the background positions when they scroll out of view
   if (bgY1 <= -bg.height) bgY1 = bgY2 + bg.height;
@@ -161,8 +160,6 @@ void displayWinImage() {
   image(winImage, 0, winImageY, width, winImageHeight); // Displays the win image at its current position
 }
 
-
-
 // Displays a game-over message when the player loses
 void displayGameOver() {
   textAlign(CENTER, CENTER);
@@ -190,27 +187,22 @@ void displayWinMessage() {
 }
 
 // Input Handling
-// Stage 2-1: Handle horizontal movement based on moveDir, which is set by keyPressed and keyReleased
 void keyPressed() {
   if (key == 'a' || key == 'A') {
-    // Move left, call player.setMovement() to set the moveDir
-
+    player.setMovement(-1); // Move left
   } else if (key == 'd' || key == 'D') {
-    // Move right, call player.setMovement() to set the moveDir
-
+    player.setMovement(1); // Move right
   } else if (key == 'r' || key == 'R') {
-    restartGame();
+    restartGame(); // Restart the game when 'r' is pressed
   }
 }
 
 void keyReleased() {
   if (key == 'a' || key == 'A' || key == 'd' || key == 'D') {
-    // Stop moving, call player.setMovement() to set the moveDir
-
+    player.setMovement(0); // Stop moving when keys are released
   }
-} 
-// End of stage 2-1
+}
 
 void restartGame() {
-  initializeGame();
+  initializeGame(); // Reinitialize the game state
 }
